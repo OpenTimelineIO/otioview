@@ -13,6 +13,12 @@ running.
 pip install opentimelineview
 ```
 
+## Install and Run via UV
+You can install and run OpenTimelineView directly from the source folder like so:
+```shell
+uv run otioview -h
+```
+
 ## Usage
 ```shell
 usage: otioview [-h] [-a ADAPTER_ARG] [-H HOOK_FUNCTION_ARG] [-m MEDIA_LINKER] [-M MEDIA_LINKER_ARG] input

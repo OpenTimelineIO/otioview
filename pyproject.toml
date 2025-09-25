@@ -1,6 +1,6 @@
 [project]
 name = "opentimelineview"
-version = "0.1.0"
+version = "0.17.0"
 description = "Timeline viewer application formerly shipped with OpenTimelineIO"
 readme = "README.md"
 authors = [
