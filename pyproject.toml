@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Timeline viewer application formerly shipped with OpenTimelineIO"
 readme = "README.md"
 authors = [
-    { name = "Contributors to the OpenTimelineIO project"}
+    { name = "Contributors to the OpenTimelineIO project", email = "otio-discussion@lists.aswf.io"}
 ]
 requires-python = ">=3.9"
 dependencies = [
