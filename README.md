@@ -1,11 +1,11 @@
-# OpenTimelineView
+# OTIOView
 
 This is the original timeline viewer application that used to ship with [OpenTimelineIO](https://github.com/AcademySoftwareFoundation/OpenTimelineIO).  
 ![OTIO View Screenshot](docs/_static/otioview.png)
 
 It has since been moved to its own repository as the new [Raven](https://github.com/OpenTimelineIO/raven) viewer has 
 been promoted as the main timeline viewing application.  
-Having moved OpenTimelineView to its own repository will lower the barrier for contributors to keep this application 
+Having moved OTIOView to its own repository will lower the barrier for contributors to keep this application 
 running.
 
 ## Install
@@ -14,7 +14,7 @@ pip install otioview
 ```
 
 ## Install and Run via UV
-You can install and run OpenTimelineView directly from the source folder like so:
+You can install and run otioview directly from the source folder like so:
 ```shell
 uv run otioview -h
 ```
@@ -48,4 +48,4 @@ options:
                         Can be used multiple times: -M burrito="bar" -M taco=12. (default: [])
 ```
 ## License
-OpenTimelineView is licensed under the Apache 2.0 license
+OTIOView is licensed under the Apache-2.0 license
