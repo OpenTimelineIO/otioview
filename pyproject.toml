@@ -1,5 +1,5 @@
 [project]
-name = "opentimelineview"
+name = "otioview"
 version = "0.17.0"
 description = "Timeline viewer application formerly shipped with OpenTimelineIO"
 readme = "README.md"
@@ -20,18 +20,18 @@ classifiers = [
     "Topic :: Multimedia :: Video :: Display",
     "Topic :: Multimedia :: Video :: Non-Linear Editor",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "License :: OSI Approved :: Apache 2.0",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Natural Language :: English"
 ]
-keywords = ["film", "tv", "editing", "editorial", "edit", "non-linear", "time", "otio", "otio-adapter", "otioview", "opentimelineview"]
+keywords = ["film", "tv", "editing", "editorial", "edit", "non-linear", "time", "otio", "otio-adapter", "otioview"]
 
 [project.scripts]
-otioview = "opentimelineview.console:main"
+otioview = "otioview.console:main"
 
 [project.urls]
-"Homepage" = "https://github.com/OpenTimelineIO/opentimelineview"
-"Bug Tracker" = "https://github.com/OpenTimelineIO/opentimelineview/issues"
+"Homepage" = "https://github.com/OpenTimelineIO/otioview"
+"Bug Tracker" = "https://github.com/OpenTimelineIO/otioview/issues"
 
 [build-system]
 requires = ["hatchling"]

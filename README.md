@@ -10,7 +10,7 @@ running.
 
 ## Install
 ```shell
-pip install opentimelineview
+pip install otioview
 ```
 
 ## Install and Run via UV
