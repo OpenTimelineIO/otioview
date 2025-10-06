@@ -17,8 +17,8 @@ except ImportError:
 
 import opentimelineio as otio
 import opentimelineio.console as otio_console
-import opentimelineview as otioViewWidget
-from opentimelineview import settings
+import otioview as otioViewWidget
+from otioview import settings
 
 
 def _parsed_args():
@@ -219,7 +219,7 @@ class Main(QtWidgets.QMainWindow):
 
         def __callback():
             self._navigation_filter_callback(actions)
-        navigation_menu.triggered[[QAction]].connect(__callback)
+        navigation_menu.triggered[QAction].connect(__callback)
 
     def _navigation_filter_callback(self, filters):
         nav_filter = 0
