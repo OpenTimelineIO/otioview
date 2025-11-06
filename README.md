@@ -8,15 +8,18 @@ been promoted as the main timeline viewing application.
 Having moved OTIOView to its own repository will lower the barrier for contributors to keep this application 
 running.
 
-## Install
+## Install and Run via UV
+You can install and run otioview directly from the root folder of you cloned repo
 ```shell
-pip install otioview
+cd otioview
+uv run otioview -h
 ```
 
-## Install and Run via UV
-You can install and run otioview directly from the source folder like so:
+## Building Wheels
+You can easily build your own wheels with uv 
 ```shell
-uv run otioview -h
+cd otioview
+uv build  # <- will produce whl and tar.gz files in a dist folder
 ```
 
 ## Usage
