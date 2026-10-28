@@ -245,20 +245,38 @@ class Ruler(QtWidgets.QGraphicsPolygonItem):
         closest_left = scene_width - ruler_pos
         closest_right = 0 - ruler_pos
         move_to_item = None
+        move_to_end = None
 
         for tw, frameNumber_tail, frameNumber_head in self.labels:
             for item in tw:
-                d = item.x() - ruler_pos
-                if direction > 0 and d > 0 and d < closest_left:
+                d = item.x_value - ruler_pos
+                if direction > 0 and d >= 0 and d <= closest_left:
                     closest_left = d
                     move_to_item = item
-                elif direction < 0 and d < 0 and d > closest_right:
-                    closest_right = d
-                    move_to_item = item
+                elif direction > 0 and item == tw[-1]:
+                    d += item.rect().width()
+                    if d <= closest_left and d >= 0:
+                        closest_left = d
+                        move_to_end = item
+                elif direction < 0:
+                    if d >= closest_right and d <= 0:
+                        closest_right = d
+                        move_to_item = item
+                        move_to_end = None
+                    if item == tw[-1]:
+                        d_last = d + item.rect().width()
+                        if d_last >= closest_right and d_last <= 0:
+                            closest_right = d_last
+                            move_to_end = item
+                            move_to_item = None
 
-        if move_to_item:
-            self.setX(move_to_item.x())
-            self.update_frame()
+        if move_to_end and direction < 0:
+            self.setX(move_to_end.x_value + move_to_end.rect().width())
+        elif move_to_item:
+            self.setX(move_to_item.x_value)
+        elif move_to_end and direction > 0:
+            self.setX(move_to_end.x_value + move_to_end.rect().width())
+        self.update_frame()
 
     def paint(self, *args, **kwargs):
         new_args = [args[0],
