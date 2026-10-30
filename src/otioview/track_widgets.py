@@ -70,6 +70,11 @@ class BaseItem(QtWidgets.QGraphicsRectItem):
         self.x_value = 0.0
         self.current_x_offset = TRACK_NAME_WIDGET_WIDTH
 
+    def shape(self):
+        path = QtGui.QPainterPath()
+        path.addRect(self.rect())
+        return path
+
     def paint(self, *args, **kwargs):
         new_args = [args[0],
                     QtWidgets.QStyleOptionGraphicsItem()] + list(args[2:])
@@ -195,7 +200,7 @@ class BaseItem(QtWidgets.QGraphicsRectItem):
         ):
             label.setTransform(QtGui.QTransform.fromScale(zoom_level, 1.0))
 
-        self_rect = self.boundingRect()
+        self_rect = self.rect()
         name_width = self.source_name_label.boundingRect().width() * zoom_level
         in_width = self.source_in_label.boundingRect().width() * zoom_level
         out_width = self.source_out_label.boundingRect().width() * zoom_level
