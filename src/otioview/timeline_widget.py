@@ -495,12 +495,11 @@ class CompositionView(QtWidgets.QGraphicsView):
         self.scene().counteract_zoom(zoom_level)
 
     def _get_first_item(self):
-        newXpos = 0
-        newYpos = track_widgets.TIME_SLIDER_HEIGHT
-
-        newPosition = QtCore.QPointF(newXpos, newYpos)
-
-        return self.scene().itemAt(newPosition, QtGui.QTransform())
+        return min(
+            (item for item in self.scene().items() if isinstance(item, track_widgets.BaseItem) and item.item is not None),
+            key=lambda item: (item.scenePos().y(), item.scenePos().x()),
+            default=None,
+        )
 
     def _get_left_item(self, curSelectedItem):
         curItemXpos = curSelectedItem.pos().x()
@@ -678,7 +677,7 @@ class CompositionView(QtWidgets.QGraphicsView):
         # Remove ruler_widget.Ruler instance from selection
         selections = [
             x for x in self.scene().selectedItems()
-            if not isinstance(x, ruler_widget.Ruler)
+            if not isinstance(x, (ruler_widget.Ruler, track_widgets.TrackNameItem))
         ]
 
         # Based on direction key, select new selected item
