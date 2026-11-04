@@ -552,9 +552,11 @@ class CompositionView(QtWidgets.QGraphicsView):
 
     def wheelEvent(self, event):
         modifiers = event.modifiers() & ~QtCore.Qt.KeypadModifier
+        if INPUT['wheel.scroll'] is not None and (modifiers & INPUT['wheel.scroll']) == INPUT['wheel.scroll']:
+            return super().wheelEvent(event)
+
         height = (modifiers & INPUT['wheel.height']) == INPUT['wheel.height']
         zoom = INPUT['wheel.zoom'] is None or (modifiers & INPUT['wheel.zoom']) == INPUT['wheel.zoom']
-        zoom = zoom and modifiers != INPUT['wheel.scroll']
 
         if not (height or zoom):
             return super().wheelEvent(event)
