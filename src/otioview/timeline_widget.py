@@ -15,21 +15,21 @@ from . import (
 
 
 # Qt ControlModifier is Command on macOS; AltModifier is Option.
-# Keep the original bindings and assign additions to unused key combinations.
+# Keep the original bindings and prefer Resolve combinations for additions.
 INPUT = {
     'selection.control': False,
-    'frame.keys': (QtCore.Qt.Key_Up, QtCore.Qt.Key_Down),
-    'frame.modifier': QtCore.Qt.ControlModifier,
-    'second.modifier': QtCore.Qt.ControlModifier | QtCore.Qt.ShiftModifier,
+    'frame.keys': (QtCore.Qt.Key_Left, QtCore.Qt.Key_Right),
+    'frame.modifier': QtCore.Qt.AltModifier,
+    'second.modifier': QtCore.Qt.ShiftModifier,
     'cut.keys': (QtCore.Qt.Key_Left, QtCore.Qt.Key_Right),
     'cut.modifier': QtCore.Qt.ControlModifier,
     'cut.exact': False,
     'marker.keys': (QtCore.Qt.Key_Up, QtCore.Qt.Key_Down),
-    'marker.modifier': QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier,
+    'marker.modifier': QtCore.Qt.ShiftModifier,
     'fit.key': QtCore.Qt.Key_F,
     'fit.modifier': QtCore.Qt.ControlModifier,
     'pan.modifier': QtCore.Qt.AltModifier,
-    'wheel.height': QtCore.Qt.ControlModifier | QtCore.Qt.ShiftModifier,
+    'wheel.height': QtCore.Qt.ShiftModifier,
     'wheel.zoom': None,
     'wheel.scroll': QtCore.Qt.ControlModifier,
 }
