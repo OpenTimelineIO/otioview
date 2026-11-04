@@ -750,7 +750,6 @@ class CompositionView(QtWidgets.QGraphicsView):
                     filters
                 )
 
-            # self._last_item_cache["item"] = curSelectedItem
             self._last_item_cache["item"] = newSelectedItem
             self._last_item_cache["previous_item"] = curSelectedItem
             self._last_item_cache["key"] = key
