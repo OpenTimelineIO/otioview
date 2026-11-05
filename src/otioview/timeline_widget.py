@@ -673,6 +673,7 @@ class CompositionView(QtWidgets.QGraphicsView):
     def keyPressEvent(self, key_event):
         super().keyPressEvent(key_event)
         self.setInteractive(True)
+        self._keyPress_frame_all(key_event)
 
         # Remove ruler_widget.Ruler instance from selection
         selections = [
@@ -700,7 +701,6 @@ class CompositionView(QtWidgets.QGraphicsView):
                     curSelectedItem = curSelectedItem.parentItem()
 
             newSelectedItem = self._get_new_item(key_event, curSelectedItem)
-            self._keyPress_frame_all(key_event)
             self._snap(key_event, curSelectedItem)
         if newSelectedItem:
             self._select_new_item(newSelectedItem)
