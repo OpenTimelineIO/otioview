@@ -663,10 +663,10 @@ class CompositionView(QtWidgets.QGraphicsView):
             self._last_item_cache["item"] = newSelectedItem
             self._last_item_cache["previous_item"] = curSelectedItem
             self._last_item_cache["key"] = key
-        elif key in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Return]:
+        elif key in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter]:
             if isinstance(curSelectedItem, track_widgets.NestedItem):
                 curSelectedItem.keyPressEvent(key_event)
-                newSelectedItem = None
+            newSelectedItem = None
 
         return newSelectedItem
 
