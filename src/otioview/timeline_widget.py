@@ -753,10 +753,10 @@ class CompositionView(QtWidgets.QGraphicsView):
             self._last_item_cache["item"] = newSelectedItem
             self._last_item_cache["previous_item"] = curSelectedItem
             self._last_item_cache["key"] = key
-        elif key in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Return]:
+        elif key in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter]:
             if isinstance(curSelectedItem, track_widgets.NestedItem):
                 curSelectedItem.keyPressEvent(key_event)
-                newSelectedItem = None
+            newSelectedItem = None
 
         return newSelectedItem
 
@@ -790,6 +790,7 @@ class CompositionView(QtWidgets.QGraphicsView):
 
         super().keyPressEvent(key_event)
         self.setInteractive(True)
+        self._keyPress_frame_all(key_event)
 
         # Remove ruler_widget.Ruler instance from selection
         selections = [
@@ -817,7 +818,6 @@ class CompositionView(QtWidgets.QGraphicsView):
                     curSelectedItem = curSelectedItem.parentItem()
 
             newSelectedItem = self._get_new_item(key_event, curSelectedItem)
-            self._keyPress_frame_all(key_event)
         if newSelectedItem:
             self._select_new_item(newSelectedItem)
 
