@@ -447,7 +447,7 @@ class NestedItem(BaseItem):
         super().keyPressEvent(key_event)
         key = key_event.key()
 
-        if key == QtCore.Qt.Key_Return:
+        if key in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
             self.scene().views()[0].open_stack.emit(self.item)
 
 

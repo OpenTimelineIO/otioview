@@ -495,12 +495,11 @@ class CompositionView(QtWidgets.QGraphicsView):
         self.scene().counteract_zoom(zoom_level)
 
     def _get_first_item(self):
-        newXpos = 0
-        newYpos = track_widgets.TIME_SLIDER_HEIGHT
-
-        newPosition = QtCore.QPointF(newXpos, newYpos)
-
-        return self.scene().itemAt(newPosition, QtGui.QTransform())
+        return min(
+            (item for item in self.scene().items() if isinstance(item, track_widgets.BaseItem) and item.item is not None),
+            key=lambda item: (item.scenePos().y(), item.scenePos().x()),
+            default=None,
+        )
 
     def _get_left_item(self, curSelectedItem):
         curItemXpos = curSelectedItem.pos().x()
@@ -664,25 +663,31 @@ class CompositionView(QtWidgets.QGraphicsView):
             self._last_item_cache["item"] = newSelectedItem
             self._last_item_cache["previous_item"] = curSelectedItem
             self._last_item_cache["key"] = key
-        elif key in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Return]:
+        elif key in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter]:
             if isinstance(curSelectedItem, track_widgets.NestedItem):
                 curSelectedItem.keyPressEvent(key_event)
-                newSelectedItem = None
+            newSelectedItem = None
 
         return newSelectedItem
 
     def keyPressEvent(self, key_event):
         super().keyPressEvent(key_event)
         self.setInteractive(True)
+        self._keyPress_frame_all(key_event)
 
         # Remove ruler_widget.Ruler instance from selection
         selections = [
             x for x in self.scene().selectedItems()
-            if not isinstance(x, ruler_widget.Ruler)
+            if not isinstance(x, (ruler_widget.Ruler, track_widgets.TrackNameItem))
         ]
 
         # Based on direction key, select new selected item
         if not selections:
+            if key_event.key() not in (
+                QtCore.Qt.Key_Left, QtCore.Qt.Key_Right,
+                QtCore.Qt.Key_Up, QtCore.Qt.Key_Down,
+            ) or (key_event.modifiers() & QtCore.Qt.ControlModifier):
+                return
             newSelectedItem = self._get_first_item()
         # No item selected, so select the first item
         else:
@@ -696,7 +701,6 @@ class CompositionView(QtWidgets.QGraphicsView):
                     curSelectedItem = curSelectedItem.parentItem()
 
             newSelectedItem = self._get_new_item(key_event, curSelectedItem)
-            self._keyPress_frame_all(key_event)
             self._snap(key_event, curSelectedItem)
         if newSelectedItem:
             self._select_new_item(newSelectedItem)
