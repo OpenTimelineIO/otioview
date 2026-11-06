@@ -447,7 +447,7 @@ class NestedItem(BaseItem):
         super().keyPressEvent(key_event)
         key = key_event.key()
 
-        if key == QtCore.Qt.Key_Return:
+        if key in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
             self.scene().views()[0].open_stack.emit(self.item)
 
 
@@ -561,14 +561,19 @@ class TimeSlider(QtWidgets.QGraphicsRectItem):
         self._ruler = None
 
     def mousePressEvent(self, mouse_event):
-        pos = self.mapToScene(mouse_event.pos())
-        self._ruler.setPos(QtCore.QPointF(
-            max(pos.x() - TRACK_NAME_WIDGET_WIDTH * CURRENT_ZOOM_LEVEL, 0),
-            TIME_SLIDER_HEIGHT -
-            MARKER_SIZE))
-        self._ruler.update_frame()
+        self._move_ruler(mouse_event)
+        mouse_event.accept()
 
-        super().mousePressEvent(mouse_event)
+    def mouseMoveEvent(self, mouse_event):
+        self._move_ruler(mouse_event)
+        mouse_event.accept()
+
+    def _move_ruler(self, mouse_event):
+        self._ruler.setPos(QtCore.QPointF(
+            max(mouse_event.pos().x(), 0),
+            TIME_SLIDER_HEIGHT - MARKER_SIZE,
+        ))
+        self._ruler.update_frame()
 
     def add_ruler(self, ruler):
         self._ruler = ruler

@@ -51,7 +51,6 @@ class OTIOSyntaxHighlighter(QtGui.QSyntaxHighlighter):
         self.punctuation_format.setFontWeight(QtGui.QFont.Bold)
 
         self.key_format = QtGui.QTextCharFormat()
-        # self.key_format.setFontItalic(True)
 
         self.literal_format = QtGui.QTextCharFormat()
         self.literal_format.setForeground(palette.brightText())

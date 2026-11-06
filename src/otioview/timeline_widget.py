@@ -14,6 +14,27 @@ from . import (
 )
 
 
+# Qt ControlModifier is Command on macOS; AltModifier is Option.
+# Keep the original bindings and prefer Resolve combinations for additions.
+INPUT = {
+    'selection.control': False,
+    'frame.keys': (QtCore.Qt.Key_Left, QtCore.Qt.Key_Right),
+    'frame.modifier': QtCore.Qt.AltModifier,
+    'second.modifier': QtCore.Qt.ShiftModifier,
+    'cut.keys': (QtCore.Qt.Key_Left, QtCore.Qt.Key_Right),
+    'cut.modifier': QtCore.Qt.ControlModifier,
+    'cut.exact': False,
+    'marker.keys': (QtCore.Qt.Key_Up, QtCore.Qt.Key_Down),
+    'marker.modifier': QtCore.Qt.ShiftModifier,
+    'fit.key': QtCore.Qt.Key_F,
+    'fit.modifier': QtCore.Qt.ControlModifier,
+    'pan.modifier': QtCore.Qt.AltModifier,
+    'wheel.height': QtCore.Qt.ShiftModifier,
+    'wheel.zoom': None,
+    'wheel.scroll': QtCore.Qt.ControlModifier,
+}
+
+
 KEY_SYM = {
     QtCore.Qt.Key_Left: QtCore.Qt.Key_Right,
     QtCore.Qt.Key_Right: QtCore.Qt.Key_Left,
@@ -194,6 +215,59 @@ class CompositionWidget(QtWidgets.QGraphicsScene):
             item.counteract_zoom(zoom_level)
 
         self._adjust_scene_size(zoom_level)
+
+    def scale_track_height(self, scale_by):
+        h = max(20.0, min(200.0, track_widgets.TRACK_HEIGHT * scale_by))
+        track_widgets.TRACK_HEIGHT = h
+        track_widgets.EFFECT_HEIGHT = h / 3.0
+
+        tracks = [i for i in self.items() if isinstance(i, track_widgets.Track)]
+        video = sorted((t for t in tracks if t.track.kind != otio.schema.TrackKind.Audio), key=lambda t: t.y())
+        audio = sorted((t for t in tracks if t.track.kind == otio.schema.TrackKind.Audio), key=lambda t: t.y())
+
+        for i, track in enumerate(video + audio):
+            separator = track_widgets.MEDIA_TYPE_SEPARATOR_HEIGHT if video and audio and i >= len(video) else 0
+            track.setY(track_widgets.TIME_SLIDER_HEIGHT + i * h + separator)
+
+            rect = track.rect()
+            rect.setHeight(h)
+            track.setRect(rect)
+
+            rect = track.track_name_item.rect()
+            rect.setHeight(h)
+            track.track_name_item.setRect(rect)
+            label = track.track_name_item.source_name_label
+            label.setY((h - label.boundingRect().height()) / 2.0)
+
+            for item in track.widget_items:
+                rect = item.rect()
+
+                if isinstance(item, track_widgets.TransitionItem):
+                    rect.setHeight(track_widgets.TRANSITION_HEIGHT)
+                    item.setY(h - track_widgets.TRANSITION_HEIGHT)
+                else:
+                    rect.setHeight(h)
+
+                item.setRect(rect)
+                item._position_labels()
+
+                for subitem in item.get_otio_sub_items():
+                    if isinstance(subitem, track_widgets.EffectItem):
+                        subitem.init()
+
+        self._adjust_scene_size(track_widgets.CURRENT_ZOOM_LEVEL)
+
+        # Update the bottom of the original 7-point ruler polygon.
+        poly = self._ruler.polygon()
+        for i in (3,):
+            poly[i] = QtCore.QPointF(poly[i].x(), self.sceneRect().height())
+        self._ruler.setPolygon(poly)
+
+        for items, frameNumber_tail, frameNumber_head in self._ruler.labels:
+            if items:
+                y = items[0].parentItem().y()
+                frameNumber_tail.setY(y)
+                frameNumber_head.setY(y)
 
     def _add_time_slider(self):
         scene_rect = self.sceneRect()
@@ -465,10 +539,10 @@ class CompositionView(QtWidgets.QGraphicsView):
         modifiers = QtWidgets.QApplication.keyboardModifiers()
         self.setDragMode(
             QtWidgets.QGraphicsView.ScrollHandDrag
-            if modifiers == QtCore.Qt.AltModifier
+            if modifiers == INPUT['pan.modifier']
             else QtWidgets.QGraphicsView.NoDrag
         )
-        self.setInteractive(not modifiers == QtCore.Qt.AltModifier)
+        self.setInteractive(not modifiers == INPUT['pan.modifier'])
 
         super().mousePressEvent(mouse_event)
 
@@ -477,30 +551,46 @@ class CompositionView(QtWidgets.QGraphicsView):
         self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
 
     def wheelEvent(self, event):
+        modifiers = event.modifiers() & ~QtCore.Qt.KeypadModifier
+        if INPUT['wheel.scroll'] is not None and (modifiers & INPUT['wheel.scroll']) == INPUT['wheel.scroll']:
+            return super().wheelEvent(event)
+
+        height = (modifiers & INPUT['wheel.height']) == INPUT['wheel.height']
+        zoom = INPUT['wheel.zoom'] is None or (modifiers & INPUT['wheel.zoom']) == INPUT['wheel.zoom']
+
+        if not (height or zoom):
+            return super().wheelEvent(event)
+
         try:
             # PySide6:
             # https://doc.qt.io/qtforpython/PySide6/QtGui/QWheelEvent.html
             delta_point = event.angleDelta()
-            delta = delta_point.y()
+            delta = delta_point.y() if abs(delta_point.y()) >= abs(delta_point.x()) else delta_point.x()
 
         except AttributeError:
             # PySide2:
             # https://doc.qt.io/qtforpython-5/PySide2/QtGui/QWheelEvent.html
             delta = event.delta()
 
-        scale_by = 1.0 + float(delta) / 1000
-        self.scale(scale_by, 1)
-        zoom_level = 1.0 / self.transform().m11()
-        track_widgets.CURRENT_ZOOM_LEVEL = zoom_level
-        self.scene().counteract_zoom(zoom_level)
+        scale_by = max(0.1, 1.0 + float(delta) / 1000)
+
+        if height:
+            self.scene().scale_track_height(scale_by)
+        else:
+            self.scale(scale_by, 1)
+
+            zoom_level = 1.0 / self.transform().m11()
+            track_widgets.CURRENT_ZOOM_LEVEL = zoom_level
+            self.scene().counteract_zoom(zoom_level)
+
+        event.accept()
 
     def _get_first_item(self):
-        newXpos = 0
-        newYpos = track_widgets.TIME_SLIDER_HEIGHT
-
-        newPosition = QtCore.QPointF(newXpos, newYpos)
-
-        return self.scene().itemAt(newPosition, QtGui.QTransform())
+        return min(
+            (item for item in self.scene().items() if isinstance(item, track_widgets.BaseItem) and item.item is not None),
+            key=lambda item: (item.scenePos().y(), item.scenePos().x()),
+            default=None,
+        )
 
     def _get_left_item(self, curSelectedItem):
         curItemXpos = curSelectedItem.pos().x()
@@ -633,7 +723,7 @@ class CompositionView(QtWidgets.QGraphicsView):
                 QtCore.Qt.Key_Down,
                 QtCore.Qt.Key_Return,
                 QtCore.Qt.Key_Enter
-        ) and not (modifier & QtCore.Qt.ControlModifier)):
+        ) and bool(modifier & QtCore.Qt.ControlModifier) == INPUT['selection.control']):
             return None
 
         if key in [QtCore.Qt.Key_Left, QtCore.Qt.Key_Right,
@@ -660,29 +750,61 @@ class CompositionView(QtWidgets.QGraphicsView):
                     filters
                 )
 
-            # self._last_item_cache["item"] = curSelectedItem
             self._last_item_cache["item"] = newSelectedItem
             self._last_item_cache["previous_item"] = curSelectedItem
             self._last_item_cache["key"] = key
-        elif key in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Return]:
+        elif key in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter]:
             if isinstance(curSelectedItem, track_widgets.NestedItem):
                 curSelectedItem.keyPressEvent(key_event)
-                newSelectedItem = None
+            newSelectedItem = None
 
         return newSelectedItem
 
     def keyPressEvent(self, key_event):
+        key = key_event.key()
+        modifier = key_event.modifiers() & ~QtCore.Qt.KeypadModifier
+
+        if key in INPUT['frame.keys'] and modifier in (
+                INPUT['frame.modifier'], INPUT['second.modifier']):
+            ruler = self.scene().get_ruler()
+            rate = self.scene().composition.trimmed_range().duration.rate
+            step = track_widgets.TIME_MULTIPLIER / rate
+            max_x = max(
+                0,
+                (self.scene().composition.trimmed_range().duration.rescaled_to(rate).value - 1) * step,
+            )
+            if modifier == INPUT['second.modifier']:
+                step = track_widgets.TIME_MULTIPLIER
+            ruler.setX(max(0, min(
+                ruler.x() + (-step if key == INPUT['frame.keys'][0] else step),
+                max_x,
+            )))
+            ruler.update_frame()
+            self.ensureVisible(ruler)
+            key_event.accept()
+            return
+
+        if self._snap(key_event, None):
+            key_event.accept()
+            return
+
         super().keyPressEvent(key_event)
         self.setInteractive(True)
+        self._keyPress_frame_all(key_event)
 
         # Remove ruler_widget.Ruler instance from selection
         selections = [
             x for x in self.scene().selectedItems()
-            if not isinstance(x, ruler_widget.Ruler)
+            if not isinstance(x, (ruler_widget.Ruler, track_widgets.TrackNameItem))
         ]
 
         # Based on direction key, select new selected item
         if not selections:
+            if key not in (
+                    QtCore.Qt.Key_Left, QtCore.Qt.Key_Right,
+                    QtCore.Qt.Key_Up, QtCore.Qt.Key_Down,
+            ) or bool(modifier & QtCore.Qt.ControlModifier) != INPUT['selection.control']:
+                return
             newSelectedItem = self._get_first_item()
         # No item selected, so select the first item
         else:
@@ -696,33 +818,45 @@ class CompositionView(QtWidgets.QGraphicsView):
                     curSelectedItem = curSelectedItem.parentItem()
 
             newSelectedItem = self._get_new_item(key_event, curSelectedItem)
-            self._keyPress_frame_all(key_event)
-            self._snap(key_event, curSelectedItem)
         if newSelectedItem:
             self._select_new_item(newSelectedItem)
 
     def _snap(self, key_event, curSelectedItem):
         key = key_event.key()
-        modifier = key_event.modifiers()
-        if key in (
-                QtCore.Qt.Key_Left,
-                QtCore.Qt.Key_Right,
-        ) and (modifier & QtCore.Qt.ControlModifier):
-            direction = 0
-            if key == QtCore.Qt.Key_Left:
-                direction = -1.0
-            elif key == QtCore.Qt.Key_Right:
-                direction = 1.0
-            if direction:
-                ruler = self.scene().get_ruler()
-                ruler.snap(direction=direction,
-                           scene_width=self.sceneRect().width())
-                self.ensureVisible(ruler)
+        modifier = key_event.modifiers() & ~QtCore.Qt.KeypadModifier
+        cut = key in INPUT['cut.keys'] and (
+            modifier == INPUT['cut.modifier'] if INPUT['cut.exact']
+            else (modifier & INPUT['cut.modifier']) == INPUT['cut.modifier']
+        )
+        marker = key in INPUT['marker.keys'] and modifier == INPUT['marker.modifier']
+        if not (cut or marker):
+            return False
+
+        ruler = self.scene().get_ruler()
+        keys = INPUT['marker.keys'] if marker else INPUT['cut.keys']
+        direction = -1.0 if key == keys[0] else 1.0
+
+        if marker:
+            positions = [
+                item.mapToItem(ruler.parentItem(), QtCore.QPointF()).x()
+                for item in self.scene().items()
+                if isinstance(item, track_widgets.Marker) and item.isVisible()
+            ]
+            positions = [position for position in positions if (position - ruler.x()) * direction > 1e-6]
+            if not positions:
+                return True
+            ruler.setX(max(positions) if direction < 0 else min(positions))
+            ruler.update_frame()
+        else:
+            ruler.snap(direction=direction, scene_width=self.sceneRect().width())
+
+        self.ensureVisible(ruler)
+        return True
 
     def _keyPress_frame_all(self, key_event):
         key = key_event.key()
         modifier = key_event.modifiers()
-        if key == QtCore.Qt.Key_F and (modifier & QtCore.Qt.ControlModifier):
+        if key == INPUT['fit.key'] and (modifier & INPUT['fit.modifier']) == INPUT['fit.modifier']:
             self.frame_all()
 
     def frame_all(self):
